@@ -1,14 +1,16 @@
 import React from 'react';
-import { SyncStatusState } from '../../shared/types';
+import { RemoteBridgeStatus, SyncStatusState } from '../../shared/types';
 
 interface SyncStatusProps {
   status: SyncStatusState;
+  remoteBridge: RemoteBridgeStatus;
   collapsed: boolean;
   onOpenSettings: () => void;
 }
 
 export const SyncStatus: React.FC<SyncStatusProps> = ({
   status,
+  remoteBridge,
   collapsed,
   onOpenSettings,
 }) => {
@@ -58,6 +60,35 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
         {status.extensionLoaded
           ? `Active (${status.extensionVersion || 'OK'})`
           : 'Non chargée'}
+      </div>
+
+      <div className="panel-row" style={{ marginTop: '2px' }}>
+        <span
+          className="status-sub"
+          title={
+            remoteBridge.lastAction
+              ? `Dernière action : ${remoteBridge.lastAction}`
+              : 'Pont local Antigravity (127.0.0.1)'
+          }
+        >
+          Bridge :{' '}
+          {!remoteBridge.enabled
+            ? 'Désactivé'
+            : remoteBridge.paused
+            ? 'En pause'
+            : remoteBridge.listening && remoteBridge.port
+            ? `Actif (:${remoteBridge.port})`
+            : remoteBridge.error || 'Inactif'}
+        </span>
+        {remoteBridge.enabled && (
+          <button
+            className="toggle-pill"
+            title={remoteBridge.paused ? 'Reprendre le contrôle à distance' : 'Mettre en pause le contrôle à distance'}
+            onClick={() => void window.gdocsApi.setRemoteBridgePaused(!remoteBridge.paused)}
+          >
+            {remoteBridge.paused ? 'Reprendre' : 'Pause'}
+          </button>
+        )}
       </div>
 
       {status.activeMapping && (

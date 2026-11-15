@@ -60,6 +60,16 @@ export interface FileMapping {
   title: string;
 }
 
+export interface RemoteBridgeStatus {
+  enabled: boolean;
+  paused: boolean;
+  listening: boolean;
+  port: number | null;
+  lastAction?: string;
+  lastActionAt?: string;
+  error?: string;
+}
+
 export interface SyncStatusState {
   online: boolean;
   oauthConnected: boolean;
@@ -99,6 +109,8 @@ export const IPC_CHANNELS = {
   OAUTH_SAVE_CREDENTIALS: 'oauth:save-credentials',
   OAUTH_DISCONNECT: 'oauth:disconnect',
   EXTENSION_CHECK_UPDATE: 'extension:check-update',
+  REMOTE_BRIDGE_SET_ENABLED: 'remote-bridge:set-enabled',
+  REMOTE_BRIDGE_SET_PAUSED: 'remote-bridge:set-paused',
   APP_SET_MODAL_OPEN: 'app:set-modal-open',
 } as const;
 
@@ -108,5 +120,6 @@ export interface AppStateSnapshot {
   sidebarCollapsed: boolean;
   customServices: CustomService[];
   syncStatus: SyncStatusState;
+  remoteBridge: RemoteBridgeStatus;
   hasOAuthCredentials: boolean;
 }

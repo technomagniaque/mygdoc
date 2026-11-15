@@ -13,6 +13,7 @@ import { GoogleAuthManager } from './google-auth';
 import { DriveSyncService } from './drive-sync';
 import { FileMapper } from './file-mapper';
 import { checkForExtensionUpdateSilently } from './extension-manager';
+import { MyGDocRemoteBridge } from './remote-bridge';
 
 export interface AppContext {
   win: BaseWindow;
@@ -21,6 +22,7 @@ export interface AppContext {
   authManager: GoogleAuthManager;
   driveSync: DriveSyncService;
   fileMapper: FileMapper;
+  remoteBridge: MyGDocRemoteBridge;
   extensionStatus: { loaded: boolean; version?: string };
   broadcastState: () => void;
   openLocalFile: (filePath: string) => Promise<void>;
@@ -40,6 +42,7 @@ export function buildStateSnapshot(ctx: AppContext): AppStateSnapshot {
     sidebarCollapsed: ctx.tabManager.getSidebarCollapsed(),
     customServices: settings.customServices,
     hasOAuthCredentials: ctx.authManager.hasCredentials(),
+    remoteBridge: ctx.remoteBridge.getStatus(),
     syncStatus: {
       online: net.isOnline(),
       oauthConnected: ctx.authManager.isConnected(),
@@ -177,5 +180,17 @@ export function registerIpcHandlers(ctx: AppContext): void {
 
   ipcMain.handle(IPC_CHANNELS.APP_SET_MODAL_OPEN, (_e, open: boolean) => {
     ctx.tabManager.setModalOpen(open);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.REMOTE_BRIDGE_SET_ENABLED, async (_e, enabled: boolean) => {
+    ctx.settingsStore.setRemoteBridgeEnabled(enabled);
+    await ctx.remoteBridge.setEnabled(enabled);
+    ctx.broadcastState();
+  });
+
+  ipcMain.handle(IPC_CHANNELS.REMOTE_BRIDGE_SET_PAUSED, (_e, paused: boolean) => {
+    ctx.settingsStore.setRemoteBridgePaused(paused);
+    ctx.remoteBridge.setPaused(paused);
+    ctx.broadcastState();
   });
 }

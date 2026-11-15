@@ -4,11 +4,15 @@ import { CustomService } from '../shared/types';
 
 export interface AppSettings {
   sidebarCollapsed: boolean;
+  remoteBridgeEnabled: boolean;
+  remoteBridgePaused: boolean;
   customServices: CustomService[];
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   sidebarCollapsed: false,
+  remoteBridgeEnabled: true,
+  remoteBridgePaused: false,
   customServices: [
     {
       id: 'gemini',
@@ -36,6 +40,8 @@ export class SettingsStore {
       const parsed = JSON.parse(fs.readFileSync(this.filePath, 'utf-8')) as Partial<AppSettings>;
       return {
         sidebarCollapsed: Boolean(parsed.sidebarCollapsed),
+        remoteBridgeEnabled: parsed.remoteBridgeEnabled !== false,
+        remoteBridgePaused: Boolean(parsed.remoteBridgePaused),
         customServices: Array.isArray(parsed.customServices)
           ? parsed.customServices
           : [...DEFAULT_SETTINGS.customServices],
@@ -55,6 +61,16 @@ export class SettingsStore {
 
   setSidebarCollapsed(collapsed: boolean): void {
     this.data.sidebarCollapsed = collapsed;
+    this.save();
+  }
+
+  setRemoteBridgeEnabled(enabled: boolean): void {
+    this.data.remoteBridgeEnabled = enabled;
+    this.save();
+  }
+
+  setRemoteBridgePaused(paused: boolean): void {
+    this.data.remoteBridgePaused = paused;
     this.save();
   }
 

@@ -121,6 +121,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ state, onClose }) 
         </div>
 
         <div className="form-field">
+          <label>
+            Contrôle à distance Antigravity (Bridge local) :{' '}
+            <strong>
+              {!state.remoteBridge.enabled
+                ? 'Désactivé'
+                : state.remoteBridge.paused
+                ? 'En pause'
+                : state.remoteBridge.listening && state.remoteBridge.port
+                ? `Actif sur 127.0.0.1:${state.remoteBridge.port}`
+                : state.remoteBridge.error || 'Arrêté'}
+            </strong>
+          </label>
+          <div className="btn-row" style={{ justifyContent: 'flex-start' }}>
+            <button
+              className="btn"
+              onClick={() =>
+                void window.gdocsApi.setRemoteBridgeEnabled(!state.remoteBridge.enabled)
+              }
+            >
+              {state.remoteBridge.enabled ? 'Désactiver le Bridge' : 'Activer le Bridge'}
+            </button>
+            {state.remoteBridge.enabled && (
+              <button
+                className="btn primary"
+                onClick={() =>
+                  void window.gdocsApi.setRemoteBridgePaused(!state.remoteBridge.paused)
+                }
+              >
+                {state.remoteBridge.paused ? 'Reprendre le contrôle' : 'Mettre en pause'}
+              </button>
+            )}
+          </div>
+          {state.remoteBridge.lastAction && (
+            <div className="status-sub">
+              Dernière action distante : {state.remoteBridge.lastAction}
+            </div>
+          )}
+        </div>
+
+        <div className="form-field">
           <label>Ajouter un service web personnalisé (façon Ferdium)</label>
           <div style={{ display: 'flex', gap: '6px' }}>
             <input

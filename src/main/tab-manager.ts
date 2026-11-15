@@ -1,4 +1,4 @@
-import { BaseWindow, WebContentsView, shell } from 'electron';
+import { BaseWindow, WebContents, WebContentsView, shell } from 'electron';
 import * as path from 'path';
 import {
   DEFAULT_DARK_MODE_CONFIG,
@@ -11,10 +11,20 @@ import { WORKSPACE_PARTITION } from './session-config';
 
 const SIDEBAR_EXPANDED_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 56;
+const MAX_CONSOLE_LOGS = 200;
+
+export interface TabConsoleLog {
+  level: string;
+  message: string;
+  timestamp: string;
+  sourceId?: string;
+  line?: number;
+}
 
 interface ManagedTab {
   meta: TabItem;
   view: WebContentsView;
+  consoleLogs: TabConsoleLog[];
 }
 
 export function extractGoogleFileId(rawUrl: string): string | undefined {
@@ -68,6 +78,20 @@ export class TabManager {
     return this.tabs.find((t) => t.meta.id === this.activeTabId)?.meta;
   }
 
+  getManagedWebContents(tabId?: string): { meta: TabItem; wc: WebContents } | undefined {
+    const targetId = tabId || this.activeTabId;
+    const found = this.tabs.find((t) => t.meta.id === targetId);
+    if (!found) return undefined;
+    return { meta: { ...found.meta }, wc: found.view.webContents };
+  }
+
+  getConsoleLogs(tabId?: string, limit = 100): TabConsoleLog[] {
+    const targetId = tabId || this.activeTabId;
+    const found = this.tabs.find((t) => t.meta.id === targetId);
+    if (!found) return [];
+    return found.consoleLogs.slice(-Math.max(1, limit));
+  }
+
   getActiveGoogleFileIds(): string[] {
     const ids = new Set<string>();
     for (const t of this.tabs) {
@@ -111,7 +135,7 @@ export class TabManager {
       canGoForward: false,
     };
 
-    const managed: ManagedTab = { meta, view };
+    const managed: ManagedTab = { meta, view, consoleLogs: [] };
     this.tabs.push(managed);
     this.win.contentView.addChildView(view);
 
@@ -150,6 +174,21 @@ export class TabManager {
 
     wc.on('did-navigate', (_e, url) => updateNavState(url));
     wc.on('did-navigate-in-page', (_e, url) => updateNavState(url));
+
+    wc.on('console-message', (details, level, message, line, sourceId) => {
+      const resolvedLevel = String(details?.level ?? level ?? 'info');
+      const resolvedMsg = String(details?.message ?? message ?? '').slice(0, 2000);
+      managed.consoleLogs.push({
+        level: resolvedLevel,
+        message: resolvedMsg,
+        timestamp: new Date().toISOString(),
+        sourceId: details?.sourceId ?? sourceId,
+        line: details?.lineNumber ?? line,
+      });
+      if (managed.consoleLogs.length > MAX_CONSOLE_LOGS) {
+        managed.consoleLogs.shift();
+      }
+    });
 
     wc.on('did-finish-load', () => {
       wc.send(IPC_CHANNELS.DARKMODE_APPLY_IN_WEBVIEW, meta.darkMode);
@@ -224,14 +263,22 @@ export class TabManager {
   }
 
   goBackActive(): void {
-    const found = this.tabs.find((t) => t.meta.id === this.activeTabId);
+    this.goBackTab(this.activeTabId);
+  }
+
+  goForwardActive(): void {
+    this.goForwardTab(this.activeTabId);
+  }
+
+  goBackTab(tabId?: string): void {
+    const found = this.tabs.find((t) => t.meta.id === (tabId || this.activeTabId));
     if (found?.view.webContents.navigationHistory.canGoBack()) {
       found.view.webContents.navigationHistory.goBack();
     }
   }
 
-  goForwardActive(): void {
-    const found = this.tabs.find((t) => t.meta.id === this.activeTabId);
+  goForwardTab(tabId?: string): void {
+    const found = this.tabs.find((t) => t.meta.id === (tabId || this.activeTabId));
     if (found?.view.webContents.navigationHistory.canGoForward()) {
       found.view.webContents.navigationHistory.goForward();
     }

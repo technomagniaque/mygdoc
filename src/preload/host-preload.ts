@@ -27,6 +27,8 @@ export interface HostApi {
   saveOAuthCredentials: (creds: OAuthCredentialsInput) => Promise<void>;
   disconnectOAuth: () => Promise<void>;
   checkExtensionUpdate: () => Promise<{ updated: boolean; version?: string }>;
+  setRemoteBridgeEnabled: (enabled: boolean) => Promise<void>;
+  setRemoteBridgePaused: (paused: boolean) => Promise<void>;
   setModalOpen: (open: boolean) => Promise<void>;
 }
 
@@ -53,6 +55,8 @@ const api: HostApi = {
   saveOAuthCredentials: (creds) => ipcRenderer.invoke(IPC_CHANNELS.OAUTH_SAVE_CREDENTIALS, creds),
   disconnectOAuth: () => ipcRenderer.invoke(IPC_CHANNELS.OAUTH_DISCONNECT),
   checkExtensionUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.EXTENSION_CHECK_UPDATE),
+  setRemoteBridgeEnabled: (enabled) => ipcRenderer.invoke(IPC_CHANNELS.REMOTE_BRIDGE_SET_ENABLED, enabled),
+  setRemoteBridgePaused: (paused) => ipcRenderer.invoke(IPC_CHANNELS.REMOTE_BRIDGE_SET_PAUSED, paused),
   setModalOpen: (open) => ipcRenderer.invoke(IPC_CHANNELS.APP_SET_MODAL_OPEN, open),
 };
 

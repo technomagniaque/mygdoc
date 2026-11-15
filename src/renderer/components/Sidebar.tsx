@@ -160,6 +160,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ state, onOpenSettings }) => {
 
       <SyncStatus
         status={syncStatus}
+        remoteBridge={state.remoteBridge}
         collapsed={sidebarCollapsed}
         onOpenSettings={onOpenSettings}
       />

@@ -9,6 +9,8 @@ import { FileMapper } from './file-mapper';
 import { GoogleAuthManager } from './google-auth';
 import { DriveSyncService, isSupportedDocumentPath } from './drive-sync';
 import { TabManager } from './tab-manager';
+import { MyGDocRemoteBridge } from './remote-bridge';
+import { createElectronBridgeAdapter } from './remote-bridge-electron';
 import { AppContext, buildStateSnapshot, registerIpcHandlers } from './ipc-handlers';
 
 // Flags Wayland & X11 pour KDE Plasma 6
@@ -92,6 +94,7 @@ async function bootstrap(): Promise<void> {
 
   let tabManager!: TabManager;
   let driveSync!: DriveSyncService;
+  let remoteBridge!: MyGDocRemoteBridge;
 
   const broadcastState = () => {
     if (!appCtx) return;
@@ -100,6 +103,13 @@ async function bootstrap(): Promise<void> {
 
   tabManager = new TabManager(win, hostView, settingsStore.get().sidebarCollapsed, broadcastState);
   driveSync = new DriveSyncService(authManager, fileMapper, broadcastState);
+  const initialSettings = settingsStore.get();
+  remoteBridge = new MyGDocRemoteBridge({
+    adapter: createElectronBridgeAdapter(tabManager),
+    enabled: initialSettings.remoteBridgeEnabled,
+    paused: initialSettings.remoteBridgePaused,
+    onStatusChange: broadcastState,
+  });
 
   const openLocalFile = async (localPath: string): Promise<void> => {
     const resolved = path.resolve(localPath);
@@ -145,6 +155,7 @@ async function bootstrap(): Promise<void> {
     authManager,
     driveSync,
     fileMapper,
+    remoteBridge,
     extensionStatus,
     broadcastState,
     openLocalFile,
@@ -165,6 +176,8 @@ async function bootstrap(): Promise<void> {
 
   tabManager.layout();
 
+  await remoteBridge.start();
+
   const initialFiles = extractCliFilePaths(process.argv);
   for (const file of initialFiles) {
     void openLocalFile(file);
@@ -183,6 +196,7 @@ async function bootstrap(): Promise<void> {
   win.on('closed', () => {
     clearInterval(onlineMonitor);
     driveSync.stopWatcher();
+    void remoteBridge.stop();
   });
 }
 
