@@ -1,5 +1,5 @@
 {
-  "name": "gdocs-ferdium",
+  "name": "mygdoc",
   "version": "1.0.0",
   "description": "Client de bureau Linux natif pour Google Docs (en ligne & hors-ligne) avec thème sombre, barre latérale multi-services et intégration Dolphin",
   "main": "dist/main/main.js",
@@ -7,7 +7,7 @@
     "name": "Etienne",
     "email": "technomagniaque@users.noreply.github.com"
   },
-  "homepage": "https://github.com/technomagniaque/gdocs-ferdium",
+  "homepage": "https://github.com/technomagniaque/mygdoc",
   "license": "MIT",
   "scripts": {
     "build:main": "tsc -p tsconfig.main.json",
@@ -41,9 +41,9 @@
     "typescript": "^5.7.3"
   },
   "build": {
-    "appId": "com.technomagniaque.gdocs-ferdium",
-    "productName": "Google Docs Desktop",
-    "executableName": "gdocs-ferdium",
+    "appId": "com.technomagniaque.mygdoc",
+    "productName": "MyGDoc",
+    "executableName": "mygdoc",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -61,14 +61,14 @@
       "icon": "build/icons",
       "desktop": {
         "entry": {
-          "Name": "Google Docs Desktop (Ferdium Edition)",
+          "Name": "MyGDoc (Google Docs Desktop)",
           "Comment": "Client Google Docs complet (en ligne & hors-ligne) avec thème sombre et synchronisation Dolphin",
-          "Exec": "/usr/bin/gdocs-ferdium %U",
+          "Exec": "/usr/bin/mygdoc %U",
           "Terminal": "false",
           "Type": "Application",
           "Categories": "Office;WordProcessor;Network;",
           "MimeType": "application/msword;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.oasis.opendocument.text;text/markdown;",
-          "StartupWMClass": "gdocs-ferdium"
+          "StartupWMClass": "mygdoc"
         }
       }
     },

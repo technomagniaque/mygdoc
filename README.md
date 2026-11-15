@@ -1,4 +1,4 @@
-# Google Docs Desktop (`gdocs-ferdium`)
+# MyGDoc (`mygdoc`)
 
 Client de bureau Linux natif (Debian 13 Trixie & CachyOS / Arch Linux sous KDE Plasma 6) combinant une interface multi-services façon **Ferdium** avec le véritable éditeur **Google Docs**, l'extension officielle **Google Docs Offline** et une synchronisation bidirectionnelle avec **Dolphin**.
 
@@ -40,7 +40,7 @@ npm start
 
 ```bash
 npm run dist:deb
-# Artefact : release/gdocs-ferdium_1.0.0_amd64.deb
+# Artefact : release/mygdoc_1.0.0_amd64.deb
 ```
 
 ### Empaquetage CachyOS / Arch Linux (`PKGBUILD`)

@@ -11,19 +11,19 @@ npm run build
 
 echo "[2/3] Création de l'archive source pour PKGBUILD..."
 mkdir -p "$PKG_DIR"
-TARBALL="gdocs-ferdium-${VERSION}.tar.gz"
+TARBALL="mygdoc-${VERSION}.tar.gz"
 tar --exclude='node_modules' --exclude='release' --exclude='.git' \
   -czf "$PKG_DIR/$TARBALL" -C "$ROOT_DIR" .
 
 echo "[3/3] Génération du PKGBUILD CachyOS / Arch Linux..."
 cat > "$PKG_DIR/PKGBUILD" <<EOF
 # Maintainer: Etienne
-pkgname=gdocs-ferdium
+pkgname=mygdoc
 pkgver=${VERSION}
 pkgrel=1
 pkgdesc="Client de bureau Linux natif pour Google Docs (en ligne & hors-ligne) avec thème sombre et intégration Dolphin"
 arch=('x86_64')
-url="https://github.com/technomagniaque/gdocs-ferdium"
+url="https://github.com/technomagniaque/mygdoc"
 license=('MIT')
 depends=('electron' 'libsecret' 'nss')
 makedepends=('nodejs' 'npm')
@@ -38,18 +38,18 @@ build() {
 
 package() {
   cd "\$srcdir"
-  install -dm755 "\$pkgdir/usr/lib/gdocs-ferdium"
-  cp -r dist package.json node_modules "\$pkgdir/usr/lib/gdocs-ferdium/"
+  install -dm755 "\$pkgdir/usr/lib/mygdoc"
+  cp -r dist package.json node_modules "\$pkgdir/usr/lib/mygdoc/"
 
   install -dm755 "\$pkgdir/usr/bin"
-  cat > "\$pkgdir/usr/bin/gdocs-ferdium" <<'LAUNCHER'
+  cat > "\$pkgdir/usr/bin/mygdoc" <<'LAUNCHER'
 #!/usr/bin/env bash
-exec electron /usr/lib/gdocs-ferdium --enable-features=UseOzonePlatform,WaylandWindowDecorations --ozone-platform-hint=auto "\$@"
+exec electron /usr/lib/mygdoc --enable-features=UseOzonePlatform,WaylandWindowDecorations --ozone-platform-hint=auto "\$@"
 LAUNCHER
-  chmod 755 "\$pkgdir/usr/bin/gdocs-ferdium"
+  chmod 755 "\$pkgdir/usr/bin/mygdoc"
 
-  install -Dm644 build/gdocs-ferdium.desktop "\$pkgdir/usr/share/applications/gdocs-ferdium.desktop"
-  install -Dm644 build/icons/512x512.png "\$pkgdir/usr/share/icons/hicolor/512x512/apps/gdocs-ferdium.png"
+  install -Dm644 build/mygdoc.desktop "\$pkgdir/usr/share/applications/mygdoc.desktop"
+  install -Dm644 build/icons/512x512.png "\$pkgdir/usr/share/icons/hicolor/512x512/apps/mygdoc.png"
 }
 EOF
 

@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 export function getConfigDir(): string {
   const xdgConfig = process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config');
-  return path.join(xdgConfig, 'gdocs-ferdium');
+  return path.join(xdgConfig, 'mygdoc');
 }
 
 export function ensureDir(dirPath: string): string {

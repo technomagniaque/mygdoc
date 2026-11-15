@@ -21,7 +21,7 @@ export function buildCleanChromeUserAgent(rawUa?: string): string {
 
   return rawUa
     .replace(/\sElectron\/[^\s]+/g, '')
-    .replace(/\sgdocs-ferdium\/[^\s]+/gi, '')
+    .replace(/\s(gdocs-ferdium|mygdoc)\/[^\s]+/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
