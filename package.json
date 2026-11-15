@@ -1,0 +1,84 @@
+{
+  "name": "gdocs-ferdium",
+  "version": "1.0.0",
+  "description": "Client de bureau Linux natif pour Google Docs (en ligne & hors-ligne) avec thème sombre, barre latérale multi-services et intégration Dolphin",
+  "main": "dist/main/main.js",
+  "author": {
+    "name": "Etienne",
+    "email": "technomagniaque@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/technomagniaque/gdocs-ferdium",
+  "license": "MIT",
+  "scripts": {
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "esbuild src/preload/gdocs-preload.ts --bundle --outfile=dist/preload/gdocs-preload.js --platform=node --main-fields=module,main --target=node20 --external:electron",
+    "build:renderer": "esbuild src/renderer/main.tsx --bundle --outfile=dist/renderer/bundle.js --platform=browser --target=chrome130 --loader:.tsx=tsx --loader:.ts=ts --loader:.css=css && cp src/renderer/index.html dist/renderer/index.html",
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "start": "npm run build && electron .",
+    "test": "tsx --test tests/*.test.ts",
+    "pack": "npm run build && electron-builder --dir",
+    "dist:deb": "npm run build && electron-builder --linux deb",
+    "dist:appimage": "npm run build && electron-builder --linux AppImage",
+    "dist:pacman": "npm run build && electron-builder --linux pacman",
+    "dist:linux": "npm run build && electron-builder --linux deb AppImage"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "darkreader": "^4.9.103",
+    "googleapis": "^144.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
+    "@types/node": "^20.17.19",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.1",
+    "electron": "^35.1.5",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  },
+  "build": {
+    "appId": "com.technomagniaque.gdocs-ferdium",
+    "productName": "Google Docs Desktop",
+    "executableName": "gdocs-ferdium",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "linux": {
+      "target": [
+        "deb",
+        "AppImage"
+      ],
+      "category": "Office",
+      "icon": "build/icons",
+      "desktop": {
+        "entry": {
+          "Name": "Google Docs Desktop (Ferdium Edition)",
+          "Comment": "Client Google Docs complet (en ligne & hors-ligne) avec thème sombre et synchronisation Dolphin",
+          "Exec": "/usr/bin/gdocs-ferdium %U",
+          "Terminal": "false",
+          "Type": "Application",
+          "Categories": "Office;WordProcessor;Network;",
+          "MimeType": "application/msword;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.oasis.opendocument.text;text/markdown;",
+          "StartupWMClass": "gdocs-ferdium"
+        }
+      }
+    },
+    "deb": {
+      "depends": [
+        "libnotify4",
+        "libxtst6",
+        "libnss3",
+        "libsecret-1-0"
+      ]
+    }
+  }
+}

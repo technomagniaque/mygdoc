@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Google Docs Desktop (Ferdium Edition)
+Comment=Client Google Docs complet (en ligne & hors-ligne) avec thème sombre et synchronisation Dolphin
+Exec=/usr/bin/gdocs-ferdium %U
+Icon=gdocs-ferdium
+Terminal=false
+Type=Application
+Categories=Office;WordProcessor;Network;
+MimeType=application/msword;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.oasis.opendocument.text;text/markdown;
+StartupWMClass=gdocs-ferdium
