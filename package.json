@@ -1,6 +1,6 @@
 {
   "name": "mygdoc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Client de bureau Linux natif pour Google Docs (en ligne & hors-ligne) avec thème sombre, barre latérale multi-services et intégration Dolphin",
   "main": "dist/main/main.js",
   "author": {
