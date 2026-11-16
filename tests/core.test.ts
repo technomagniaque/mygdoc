@@ -6,6 +6,12 @@ import * as path from 'node:path';
 import AdmZip from 'adm-zip';
 import { extractZipFromCrx, unpackCrxToDir } from '../src/main/crx-parser';
 import { FileMapper, inferExportFormat } from '../src/main/file-mapper';
+import {
+  buildCleanChromeUserAgent,
+  buildGoogleChromeFullVersionList,
+  buildGoogleChromeSecChUa,
+  isGoogleAuthUrl,
+} from '../src/main/ua-helpers';
 
 test('extractZipFromCrx extrait correctement le ZIP d’une archive CRX3', () => {
   const zip = new AdmZip();
@@ -82,4 +88,29 @@ test('inferExportFormat détecte les formats supportés', () => {
   assert.equal(inferExportFormat('/home/eti/notes.odt'), 'odt');
   assert.equal(inferExportFormat('/home/eti/notes.md'), 'md');
   assert.equal(inferExportFormat('/home/eti/notes.txt'), 'txt');
+});
+
+test('buildGoogleChromeSecChUa et FullVersionList incluent Google Chrome de façon cohérente', () => {
+  assert.equal(
+    buildGoogleChromeSecChUa('134.0.6998.205'),
+    '"Not:A-Brand";v="24", "Chromium";v="134", "Google Chrome";v="134"'
+  );
+  assert.equal(
+    buildGoogleChromeFullVersionList('134.0.6998.205'),
+    '"Not:A-Brand";v="24.0.0.0", "Chromium";v="134.0.6998.205", "Google Chrome";v="134.0.6998.205"'
+  );
+  assert.equal(
+    buildCleanChromeUserAgent(
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/134.0.6998.205 mygdoc/1.0.0 Electron/35.1.5 Safari/537.36'
+    ),
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/134.0.6998.205 Safari/537.36'
+  );
+});
+
+test('isGoogleAuthUrl détecte uniquement les hôtes d’authentification Google', () => {
+  assert.equal(isGoogleAuthUrl('https://accounts.google.com/v3/signin/rejected?service=wise'), true);
+  assert.equal(isGoogleAuthUrl('https://sub.accounts.google.com/ServiceLogin'), true);
+  assert.equal(isGoogleAuthUrl('https://accounts.youtube.com/accounts/SetSID'), true);
+  assert.equal(isGoogleAuthUrl('https://docs.google.com/document/d/123/edit'), false);
+  assert.equal(isGoogleAuthUrl('not-a-url'), false);
 });

@@ -161,6 +161,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ state, onOpenSettings }) => {
       <SyncStatus
         status={syncStatus}
         remoteBridge={state.remoteBridge}
+        loginUaMode={state.loginUaMode}
+        authRejected={state.authRejected}
         collapsed={sidebarCollapsed}
         onOpenSettings={onOpenSettings}
       />

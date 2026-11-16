@@ -1,6 +1,34 @@
 import { session, Session } from 'electron';
+import { GoogleLoginUaMode } from '../shared/types';
+import {
+  FIREFOX_LOGIN_USER_AGENT,
+  WORKSPACE_PARTITION,
+  buildCleanChromeUserAgent,
+  buildGoogleChromeFullVersionList,
+  buildGoogleChromeSecChUa,
+  isGoogleAuthUrl,
+  isTrustedGoogleOrigin,
+} from './ua-helpers';
 
-export const WORKSPACE_PARTITION = 'persist:google-workspace';
+export {
+  FIREFOX_LOGIN_USER_AGENT,
+  WORKSPACE_PARTITION,
+  buildCleanChromeUserAgent,
+  buildGoogleChromeFullVersionList,
+  buildGoogleChromeSecChUa,
+  isGoogleAuthUrl,
+  isTrustedGoogleOrigin,
+};
+
+let activeLoginUaMode: GoogleLoginUaMode = 'chrome-coherent';
+
+export function setGoogleLoginUaMode(mode: GoogleLoginUaMode): void {
+  activeLoginUaMode = mode;
+}
+
+export function getGoogleLoginUaMode(): GoogleLoginUaMode {
+  return activeLoginUaMode;
+}
 
 const ALLOWED_PERMISSIONS = new Set([
   'clipboard-read',
@@ -13,45 +41,57 @@ const ALLOWED_PERMISSIONS = new Set([
   'top-level-storage-access',
 ]);
 
-export function buildCleanChromeUserAgent(rawUa?: string): string {
-  const chromeVersion = process.versions.chrome || '134.0.0.0';
-  if (!rawUa) {
-    return `Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${chromeVersion} Safari/537.36`;
+function setOrReplaceHeader(
+  headers: Record<string, string | string[]>,
+  targetName: string,
+  value: string
+): void {
+  const lowerTarget = targetName.toLowerCase();
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === lowerTarget) {
+      delete headers[key];
+    }
   }
-
-  return rawUa
-    .replace(/\sElectron\/[^\s]+/g, '')
-    .replace(/\s(gdocs-ferdium|mygdoc)\/[^\s]+/gi, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+  headers[targetName] = value;
 }
 
-export function isTrustedGoogleOrigin(originUrl: string | undefined): boolean {
-  if (!originUrl) return false;
-  if (originUrl.startsWith('chrome-extension://')) return true;
-  try {
-    const parsed = new URL(originUrl);
-    const host = parsed.hostname.toLowerCase();
-    return (
-      host === 'google.com' ||
-      host.endsWith('.google.com') ||
-      host.endsWith('.googleusercontent.com') ||
-      host.endsWith('.gstatic.com')
-    );
-  } catch {
-    return false;
+function deleteHeadersByPrefix(
+  headers: Record<string, string | string[]>,
+  prefixLower: string
+): void {
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase().startsWith(prefixLower)) {
+      delete headers[key];
+    }
   }
 }
 
-export function configureGoogleWorkspaceSession(): Session {
+export function configureGoogleWorkspaceSession(initialMode: GoogleLoginUaMode = 'chrome-coherent'): Session {
+  activeLoginUaMode = initialMode;
   const ses = session.fromPartition(WORKSPACE_PARTITION);
   const cleanUa = buildCleanChromeUserAgent(ses.getUserAgent());
+  const secChUa = buildGoogleChromeSecChUa();
+  const secChUaFull = buildGoogleChromeFullVersionList();
 
   ses.setUserAgent(cleanUa);
 
   ses.webRequest.onBeforeSendHeaders((details, callback) => {
     const headers = { ...details.requestHeaders };
-    headers['User-Agent'] = cleanUa;
+    const useFirefoxOnAuth =
+      activeLoginUaMode === 'firefox-login' && isGoogleAuthUrl(details.url);
+
+    if (useFirefoxOnAuth) {
+      setOrReplaceHeader(headers, 'User-Agent', FIREFOX_LOGIN_USER_AGENT);
+      deleteHeadersByPrefix(headers, 'sec-ch-ua');
+    } else {
+      setOrReplaceHeader(headers, 'User-Agent', cleanUa);
+      if (isTrustedGoogleOrigin(details.url)) {
+        setOrReplaceHeader(headers, 'Sec-CH-UA', secChUa);
+        setOrReplaceHeader(headers, 'Sec-CH-UA-Full-Version-List', secChUaFull);
+        setOrReplaceHeader(headers, 'Sec-CH-UA-Platform', '"Linux"');
+      }
+    }
+
     callback({ requestHeaders: headers });
   });
 

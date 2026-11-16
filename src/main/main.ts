@@ -2,7 +2,7 @@ import { app, BaseWindow, WebContentsView, dialog, nativeTheme, net } from 'elec
 import * as fs from 'fs';
 import * as path from 'path';
 import { IPC_CHANNELS } from '../shared/types';
-import { configureGoogleWorkspaceSession } from './session-config';
+import { buildCleanChromeUserAgent, configureGoogleWorkspaceSession } from './session-config';
 import { ensureAndLoadGoogleDocsOfflineExtension } from './extension-manager';
 import { SettingsStore } from './settings-store';
 import { FileMapper } from './file-mapper';
@@ -16,6 +16,8 @@ import { AppContext, buildStateSnapshot, registerIpcHandlers } from './ipc-handl
 // Flags Wayland & X11 pour KDE Plasma 6
 app.commandLine.appendSwitch('enable-features', 'UseOzonePlatform,WaylandWindowDecorations');
 app.commandLine.appendSwitch('ozone-platform-hint', 'auto');
+// Évite le signal navigator.webdriver / AutomationControlled rejeté par accounts.google.com
+app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled');
 
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
@@ -56,14 +58,15 @@ app.on('second-instance', (_event, commandLine) => {
 async function bootstrap(): Promise<void> {
   await app.whenReady();
   nativeTheme.themeSource = 'dark';
+  app.userAgentFallback = buildCleanChromeUserAgent(app.userAgentFallback);
 
-  const ses = configureGoogleWorkspaceSession();
+  const settingsStore = new SettingsStore();
+  const ses = configureGoogleWorkspaceSession(settingsStore.get().loginUaMode);
   const extResult = await ensureAndLoadGoogleDocsOfflineExtension(ses);
   if (!extResult.loaded) {
     console.warn('[gdocs-ferdium] Extension Google Docs Offline non chargée :', extResult.error);
   }
 
-  const settingsStore = new SettingsStore();
   const fileMapper = new FileMapper();
   const authManager = new GoogleAuthManager();
   await authManager.restoreSession();

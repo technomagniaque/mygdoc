@@ -60,6 +60,8 @@ export interface FileMapping {
   title: string;
 }
 
+export type GoogleLoginUaMode = 'chrome-coherent' | 'firefox-login';
+
 export interface RemoteBridgeStatus {
   enabled: boolean;
   paused: boolean;
@@ -111,6 +113,8 @@ export const IPC_CHANNELS = {
   EXTENSION_CHECK_UPDATE: 'extension:check-update',
   REMOTE_BRIDGE_SET_ENABLED: 'remote-bridge:set-enabled',
   REMOTE_BRIDGE_SET_PAUSED: 'remote-bridge:set-paused',
+  AUTH_GET_LOGIN_UA_MODE: 'auth:get-login-ua-mode',
+  AUTH_SET_LOGIN_UA_MODE: 'auth:set-login-ua-mode',
   APP_SET_MODAL_OPEN: 'app:set-modal-open',
 } as const;
 
@@ -121,5 +125,7 @@ export interface AppStateSnapshot {
   customServices: CustomService[];
   syncStatus: SyncStatusState;
   remoteBridge: RemoteBridgeStatus;
+  loginUaMode: GoogleLoginUaMode;
+  authRejected: boolean;
   hasOAuthCredentials: boolean;
 }

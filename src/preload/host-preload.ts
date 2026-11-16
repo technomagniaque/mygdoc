@@ -3,6 +3,7 @@ import {
   AppStateSnapshot,
   CustomService,
   DarkModeConfig,
+  GoogleLoginUaMode,
   IPC_CHANNELS,
   OAuthCredentialsInput,
   ServiceKind,
@@ -29,6 +30,7 @@ export interface HostApi {
   checkExtensionUpdate: () => Promise<{ updated: boolean; version?: string }>;
   setRemoteBridgeEnabled: (enabled: boolean) => Promise<void>;
   setRemoteBridgePaused: (paused: boolean) => Promise<void>;
+  setLoginUaMode: (mode: GoogleLoginUaMode, retryDriveLogin?: boolean) => Promise<void>;
   setModalOpen: (open: boolean) => Promise<void>;
 }
 
@@ -57,6 +59,8 @@ const api: HostApi = {
   checkExtensionUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.EXTENSION_CHECK_UPDATE),
   setRemoteBridgeEnabled: (enabled) => ipcRenderer.invoke(IPC_CHANNELS.REMOTE_BRIDGE_SET_ENABLED, enabled),
   setRemoteBridgePaused: (paused) => ipcRenderer.invoke(IPC_CHANNELS.REMOTE_BRIDGE_SET_PAUSED, paused),
+  setLoginUaMode: (mode, retryDriveLogin) =>
+    ipcRenderer.invoke(IPC_CHANNELS.AUTH_SET_LOGIN_UA_MODE, mode, retryDriveLogin),
   setModalOpen: (open) => ipcRenderer.invoke(IPC_CHANNELS.APP_SET_MODAL_OPEN, open),
 };
 

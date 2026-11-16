@@ -115,7 +115,12 @@ export function createElectronBridgeAdapter(tabManager: TabManager): BridgeTabAd
 
     async executeScript<T = unknown>(tabId: string | undefined, script: string): Promise<T> {
       const { wc } = requireTab(tabId);
-      return (await wc.executeJavaScript(script, true)) as T;
+      return await Promise.race([
+        wc.executeJavaScript(script, true) as Promise<T>,
+        new Promise<T>((_resolve, reject) =>
+          setTimeout(() => reject(new Error('Délai dépassé pour executeJavaScript (12s)')), 12000)
+        ),
+      ]);
     },
 
     async captureScreenshot(tabId, format) {

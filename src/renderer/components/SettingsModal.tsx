@@ -122,6 +122,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ state, onClose }) 
 
         <div className="form-field">
           <label>
+            Mode User-Agent connexion Google :{' '}
+            <strong>
+              {state.loginUaMode === 'firefox-login'
+                ? 'Firefox Desktop (secours connexion)'
+                : 'Chrome cohérent (+ Client Hints)'}
+            </strong>
+          </label>
+          <div className="btn-row" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
+            <button
+              className={`btn ${state.loginUaMode === 'chrome-coherent' ? 'primary' : ''}`}
+              onClick={() => void window.gdocsApi.setLoginUaMode('chrome-coherent', false)}
+            >
+              Chrome cohérent
+            </button>
+            <button
+              className={`btn ${state.loginUaMode === 'firefox-login' ? 'primary' : ''}`}
+              onClick={() => void window.gdocsApi.setLoginUaMode('firefox-login', false)}
+            >
+              Firefox Desktop (secours)
+            </button>
+            <button
+              className="btn"
+              onClick={() => void window.gdocsApi.setLoginUaMode(state.loginUaMode, true)}
+            >
+              Réessayer la connexion Google Drive
+            </button>
+          </div>
+          <div className="status-sub">
+            Si accounts.google.com bloque la connexion en Chrome cohérent, utilisez « Firefox Desktop (secours) » puis réessayez.
+          </div>
+        </div>
+
+        <div className="form-field">
+          <label>
             Contrôle à distance Antigravity (Bridge local) :{' '}
             <strong>
               {!state.remoteBridge.enabled

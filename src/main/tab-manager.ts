@@ -7,7 +7,13 @@ import {
   ServiceKind,
   TabItem,
 } from '../shared/types';
-import { WORKSPACE_PARTITION } from './session-config';
+import {
+  FIREFOX_LOGIN_USER_AGENT,
+  WORKSPACE_PARTITION,
+  buildCleanChromeUserAgent,
+  getGoogleLoginUaMode,
+  isGoogleAuthUrl,
+} from './session-config';
 
 const SIDEBAR_EXPANDED_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 56;
@@ -37,6 +43,7 @@ export class TabManager {
   private activeTabId = '';
   private sidebarCollapsed = false;
   private modalOpen = false;
+  private authRejected = false;
   private onChange?: () => void;
 
   constructor(
@@ -140,6 +147,7 @@ export class TabManager {
     this.win.contentView.addChildView(view);
 
     this.attachWebContentsListeners(managed);
+    this.applyUserAgentForUrl(view.webContents, opts.url);
     void view.webContents.loadURL(opts.url);
 
     if (opts.activate !== false || !this.activeTabId) {
@@ -169,6 +177,11 @@ export class TabManager {
       if (detectedId) meta.googleFileId = detectedId;
       meta.canGoBack = wc.navigationHistory.canGoBack();
       meta.canGoForward = wc.navigationHistory.canGoForward();
+      if (url.includes('accounts.google.com/v3/signin/rejected')) {
+        this.authRejected = true;
+      } else if (this.authRejected && !isGoogleAuthUrl(url)) {
+        this.authRejected = false;
+      }
       this.onChange?.();
     };
 
@@ -300,6 +313,43 @@ export class TabManager {
 
   findTabByLocalPath(localPath: string): TabItem | undefined {
     return this.tabs.find((t) => t.meta.localPath === localPath)?.meta;
+  }
+
+  isAuthRejected(): boolean {
+    return this.authRejected;
+  }
+
+  private applyUserAgentForUrl(wc: WebContents, _rawUrl: string): void {
+    // Le changement de User-Agent pour accounts.google.com est géré sans interrompre
+    // la navigation via session.webRequest.onBeforeSendHeaders + gdocs-preload.ts.
+    const cleanChrome = buildCleanChromeUserAgent();
+    if (wc.getUserAgent() !== cleanChrome) {
+      wc.setUserAgent(cleanChrome);
+    }
+  }
+
+  refreshAllUserAgents(): void {
+    for (const tab of this.tabs) {
+      this.applyUserAgentForUrl(tab.view.webContents, tab.meta.url || 'https://drive.google.com');
+    }
+  }
+
+  retryGoogleDriveLogin(): void {
+    this.authRejected = false;
+    const driveTab =
+      this.tabs.find((t) => t.meta.kind === 'drive') ??
+      this.tabs.find((t) => t.meta.id === this.activeTabId) ??
+      this.tabs[0];
+    if (!driveTab) {
+      this.onChange?.();
+      return;
+    }
+
+    const targetUrl = 'https://drive.google.com/drive/my-drive';
+    this.applyUserAgentForUrl(driveTab.view.webContents, targetUrl);
+    this.activateTab(driveTab.meta.id);
+    void driveTab.view.webContents.loadURL(targetUrl);
+    this.onChange?.();
   }
 
   layout(): void {

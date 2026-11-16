@@ -1,11 +1,12 @@
 import * as fs from 'fs';
 import { getSettingsFilePath } from './app-paths';
-import { CustomService } from '../shared/types';
+import { CustomService, GoogleLoginUaMode } from '../shared/types';
 
 export interface AppSettings {
   sidebarCollapsed: boolean;
   remoteBridgeEnabled: boolean;
   remoteBridgePaused: boolean;
+  loginUaMode: GoogleLoginUaMode;
   customServices: CustomService[];
 }
 
@@ -13,6 +14,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   sidebarCollapsed: false,
   remoteBridgeEnabled: true,
   remoteBridgePaused: false,
+  loginUaMode: 'chrome-coherent',
   customServices: [
     {
       id: 'gemini',
@@ -42,6 +44,7 @@ export class SettingsStore {
         sidebarCollapsed: Boolean(parsed.sidebarCollapsed),
         remoteBridgeEnabled: parsed.remoteBridgeEnabled !== false,
         remoteBridgePaused: Boolean(parsed.remoteBridgePaused),
+        loginUaMode: parsed.loginUaMode === 'firefox-login' ? 'firefox-login' : 'chrome-coherent',
         customServices: Array.isArray(parsed.customServices)
           ? parsed.customServices
           : [...DEFAULT_SETTINGS.customServices],
@@ -71,6 +74,11 @@ export class SettingsStore {
 
   setRemoteBridgePaused(paused: boolean): void {
     this.data.remoteBridgePaused = paused;
+    this.save();
+  }
+
+  setLoginUaMode(mode: GoogleLoginUaMode): void {
+    this.data.loginUaMode = mode;
     this.save();
   }
 

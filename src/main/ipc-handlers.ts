@@ -3,10 +3,12 @@ import {
   AppStateSnapshot,
   CustomService,
   DarkModeConfig,
+  GoogleLoginUaMode,
   IPC_CHANNELS,
   OAuthCredentialsInput,
   ServiceKind,
 } from '../shared/types';
+import { getGoogleLoginUaMode, setGoogleLoginUaMode } from './session-config';
 import { TabManager } from './tab-manager';
 import { SettingsStore } from './settings-store';
 import { GoogleAuthManager } from './google-auth';
@@ -42,6 +44,8 @@ export function buildStateSnapshot(ctx: AppContext): AppStateSnapshot {
     sidebarCollapsed: ctx.tabManager.getSidebarCollapsed(),
     customServices: settings.customServices,
     hasOAuthCredentials: ctx.authManager.hasCredentials(),
+    loginUaMode: settings.loginUaMode,
+    authRejected: ctx.tabManager.isAuthRejected(),
     remoteBridge: ctx.remoteBridge.getStatus(),
     syncStatus: {
       online: net.isOnline(),
@@ -193,4 +197,22 @@ export function registerIpcHandlers(ctx: AppContext): void {
     ctx.remoteBridge.setPaused(paused);
     ctx.broadcastState();
   });
+
+  ipcMain.on(IPC_CHANNELS.AUTH_GET_LOGIN_UA_MODE, (event) => {
+    event.returnValue = getGoogleLoginUaMode();
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.AUTH_SET_LOGIN_UA_MODE,
+    (_e, mode: GoogleLoginUaMode, retryDriveLogin = false) => {
+      ctx.settingsStore.setLoginUaMode(mode);
+      setGoogleLoginUaMode(mode);
+      ctx.tabManager.refreshAllUserAgents();
+      if (retryDriveLogin) {
+        ctx.tabManager.retryGoogleDriveLogin();
+      } else {
+        ctx.broadcastState();
+      }
+    }
+  );
 }

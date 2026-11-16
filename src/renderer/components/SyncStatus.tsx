@@ -1,9 +1,11 @@
 import React from 'react';
-import { RemoteBridgeStatus, SyncStatusState } from '../../shared/types';
+import { GoogleLoginUaMode, RemoteBridgeStatus, SyncStatusState } from '../../shared/types';
 
 interface SyncStatusProps {
   status: SyncStatusState;
   remoteBridge: RemoteBridgeStatus;
+  loginUaMode: GoogleLoginUaMode;
+  authRejected: boolean;
   collapsed: boolean;
   onOpenSettings: () => void;
 }
@@ -11,6 +13,8 @@ interface SyncStatusProps {
 export const SyncStatus: React.FC<SyncStatusProps> = ({
   status,
   remoteBridge,
+  loginUaMode,
+  authRejected,
   collapsed,
   onOpenSettings,
 }) => {
@@ -106,6 +110,40 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({
             onClick={() => void window.gdocsApi.forceExportActive()}
           >
             Exporter
+          </button>
+        </div>
+      )}
+
+      {authRejected && (
+        <div
+          style={{
+            marginTop: '4px',
+            padding: '6px 7px',
+            borderRadius: '6px',
+            background: 'rgba(239, 68, 68, 0.14)',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '5px',
+          }}
+        >
+          <div className="status-sub" style={{ color: '#fca5a5', lineHeight: 1.3 }}>
+            Connexion Google bloquée par accounts.google.com.
+          </div>
+          <button
+            className="toggle-pill"
+            style={{ alignSelf: 'flex-start' }}
+            title="Bascule l'agent de connexion vers Firefox Desktop sans Client Hints et recharge Google Drive"
+            onClick={() =>
+              void window.gdocsApi.setLoginUaMode(
+                loginUaMode === 'firefox-login' ? 'chrome-coherent' : 'firefox-login',
+                true
+              )
+            }
+          >
+            {loginUaMode === 'firefox-login'
+              ? 'Réessayer en mode Chrome'
+              : 'Essayer connexion mode Firefox'}
           </button>
         </div>
       )}
