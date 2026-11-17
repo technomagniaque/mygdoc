@@ -141,9 +141,18 @@ function patchMainWorldNavigator(): void {
 
 patchMainWorldNavigator();
 
+function isGoogleEditorPage(): boolean {
+  try {
+    return window.location.hostname.toLowerCase() === 'docs.google.com';
+  } catch {
+    return false;
+  }
+}
+
 function buildReadabilityCss(config: DarkModeConfig): string {
   const invertRatio = (config.canvasInvert / 100).toFixed(3);
   const canvasContrastRatio = (config.canvasContrast / 100).toFixed(2);
+  const uiContrastRatio = (config.contrast / 100).toFixed(2);
   const brightnessRatio = (config.brightness / 100).toFixed(2);
   const sepiaRatio = (config.sepia / 100).toFixed(2);
 
@@ -166,16 +175,133 @@ function buildReadabilityCss(config: DarkModeConfig): string {
     `
     : '';
 
+  const googleEditorDarkCss = isGoogleEditorPage()
+    ? `
+      html, body {
+        background-color: #141618 !important;
+        color: ${config.darkSchemeTextColor} !important;
+        color-scheme: dark !important;
+      }
+
+      /* Empêche l'overlay transparent Google Meet de devenir opaque et de masquer les menus */
+      #meet-captured-region {
+        background: transparent !important;
+      }
+
+      /* Barre supérieure, menus (Fichier, Modifier, Afficher...) et barre d'outils */
+      #docs-chrome {
+        background-color: ${config.darkSchemeBackgroundColor} !important;
+        color: ${config.darkSchemeTextColor} !important;
+        border-bottom: 1px solid #2e3238 !important;
+        filter: contrast(${uiContrastRatio}) brightness(${brightnessRatio}) sepia(${sepiaRatio}) !important;
+      }
+
+      #docs-chrome * {
+        background-color: transparent !important;
+      }
+
+      #docs-chrome .docs-icon-img-container {
+        overflow: hidden !important;
+      }
+
+      #docs-chrome .docs-title-input,
+      #docs-chrome .menu-button,
+      #docs-chrome .goog-toolbar-button,
+      #docs-chrome .goog-toolbar-menu-button,
+      #docs-chrome .goog-toolbar-combo-button-caption,
+      #docs-chrome .goog-toolbar-select .goog-toolbar-menu-button-caption {
+        color: ${config.darkSchemeTextColor} !important;
+      }
+
+      #docs-chrome .goog-toolbar-button-hover,
+      #docs-chrome .goog-toolbar-menu-button-hover,
+      #docs-chrome .goog-control-hover,
+      #docs-chrome .menu-button.goog-control-open {
+        background-color: rgba(255, 255, 255, 0.12) !important;
+        border-radius: 4px !important;
+      }
+
+      #docs-chrome .goog-toolbar-button-checked,
+      #docs-chrome .goog-toolbar-button-active {
+        background-color: rgba(96, 165, 250, 0.24) !important;
+        border-radius: 4px !important;
+      }
+
+      #docs-chrome .docs-icon-img,
+      #docs-chrome svg {
+        filter: invert(0.88) hue-rotate(180deg) brightness(1.08) !important;
+      }
+
+      #docs-chrome .docs-titlebar-badge img,
+      #docs-chrome .gb_B img {
+        filter: none !important;
+      }
+
+      /* Bouton Partager */
+      #docs-titlebar-share-client-button .jfk-button,
+      #docs-titlebar-share-client-button [role="button"] {
+        background-color: #1d4ed8 !important;
+        color: #ffffff !important;
+        border-radius: 18px !important;
+      }
+
+      /* Menus déroulants et sous-menus */
+      .goog-menu {
+        background-color: #23262a !important;
+        border: 1px solid #383d45 !important;
+        color: ${config.darkSchemeTextColor} !important;
+      }
+
+      .goog-menuitem,
+      .goog-menuitem-content,
+      .goog-menuitem-accel {
+        color: ${config.darkSchemeTextColor} !important;
+      }
+
+      .goog-menuitem-highlight,
+      .goog-menuitem-hover {
+        background-color: #32373e !important;
+      }
+
+      /* Panneau Plan du document & barre compagnon droite */
+      .left-sidebar-container,
+      .navigation-widget,
+      .navigation-widget-content,
+      .companion-collapser-button-container,
+      .docs-companion-app-switcher-container {
+        background-color: #1b1d20 !important;
+        color: ${config.darkSchemeTextColor} !important;
+        border-color: #2c3036 !important;
+        filter: contrast(${uiContrastRatio}) brightness(${brightnessRatio}) !important;
+      }
+
+      .navigation-item-content,
+      .navigation-widget-header {
+        color: ${config.darkSchemeTextColor} !important;
+      }
+
+      /* Règle horizontale Google Docs */
+      #kix-horizontal-ruler,
+      .docs-ruler-inner {
+        background-color: #1b1d20 !important;
+        border-color: #2c3036 !important;
+      }
+    `
+    : '';
+
   return `
+    ${googleEditorDarkCss}
+
     /* Arrière-plan autour de la feuille bien distinct pour reposer les yeux */
     .kix-appview-editor,
-    #docs-editor-container {
-      background-color: #16181a !important;
+    #docs-editor-container,
+    #docs-editor {
+      background-color: #141618 !important;
     }
 
     /* Bordure subtile autour de chaque page pour la délimiter proprement */
     .kix-page-paginated {
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.55), 0 0 0 1px #2d3136 !important;
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6), 0 0 0 1px #2f343b !important;
     }
 
     /* Menus, barre d'outils, barre de plan et commentaires : contraste élevé garanti */
@@ -229,33 +355,41 @@ function applyDarkMode(config: DarkModeConfig): void {
     // Ne pas envelopper window.fetch ni injecter DarkReader sur accounts.google.com (BotGuard)
     if (isGoogleAuthPage()) {
       DarkReader.disable();
+      document.getElementById(CUSTOM_STYLE_ID)?.remove();
       return;
     }
 
-    if (!config.enabled) {
+    // Toujours appliquer le CSS de lisibilité et les curseurs avant DarkReader
+    syncCustomReadabilityStyle(config);
+
+    // Sur docs.google.com (CSP TrustedScript), DarkReader échoue et laisse un fallback
+    // qui rend #meet-captured-region opaque ; le thème sombre CSS natif gère tout proprement.
+    if (!config.enabled || isGoogleEditorPage()) {
       DarkReader.disable();
-      syncCustomReadabilityStyle(config);
       return;
     }
 
     DarkReader.setFetchMethod(window.fetch.bind(window));
-    DarkReader.enable(
-      {
-        brightness: config.brightness,
-        contrast: config.contrast,
-        sepia: config.sepia,
-        darkSchemeBackgroundColor: config.darkSchemeBackgroundColor,
-        darkSchemeTextColor: config.darkSchemeTextColor,
-      },
-      {
-        invert: [],
-        css: buildReadabilityCss(config),
-        ignoreInlineStyle: [],
-        ignoreImageAnalysis: ['img', 'svg', 'canvas.kix-canvas-tile-content'],
-        disableStyleSheetsProxy: false,
-      }
-    );
-    syncCustomReadabilityStyle(config);
+    try {
+      DarkReader.enable(
+        {
+          brightness: config.brightness,
+          contrast: config.contrast,
+          sepia: config.sepia,
+          darkSchemeBackgroundColor: config.darkSchemeBackgroundColor,
+          darkSchemeTextColor: config.darkSchemeTextColor,
+        },
+        {
+          invert: [],
+          css: buildReadabilityCss(config),
+          ignoreInlineStyle: [],
+          ignoreImageAnalysis: ['img', 'svg', 'canvas.kix-canvas-tile-content'],
+          disableStyleSheetsProxy: true,
+        }
+      );
+    } catch {
+      DarkReader.disable();
+    }
   } catch {
     // Ignore les erreurs transitoires avant que document.head ne soit prêt
   }

@@ -55,7 +55,19 @@ export class TabManager {
     this.sidebarCollapsed = initialCollapsed;
     this.onChange = onChange;
 
+    const scheduleLayout = () => {
+      this.layout();
+      setTimeout(() => this.layout(), 60);
+      setTimeout(() => this.layout(), 200);
+    };
+
     this.win.on('resize', () => this.layout());
+    this.win.on('resized', scheduleLayout);
+    this.win.on('maximize', scheduleLayout);
+    this.win.on('unmaximize', scheduleLayout);
+    this.win.on('enter-full-screen', scheduleLayout);
+    this.win.on('leave-full-screen', scheduleLayout);
+    this.win.on('restore', scheduleLayout);
   }
 
   getSidebarCollapsed(): boolean {
